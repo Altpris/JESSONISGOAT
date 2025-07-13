@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Vault</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #1e1e1e;
+      color: white;
+    }
+    #container {
+      background: #2c2c2c;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      max-width: 400px;
+    }
+    input {
+      padding: 10px;
+      margin: 10px 0;
+      width: calc(100% - 40px);
+      border: none;
+      border-radius: 5px;
+    }
+    .input-wrapper {
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+    .toggle-btn {
+      background: #555;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 10px;
+      margin-left: 5px;
+      cursor: pointer;
+    }
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px 0;
+    }
+    #submitButton { background: #4caf50; color: white; }
+    #resetAll { background: #ff9800; color: white; }
+    #setCodeLength { background: #2196f3; color: white; }
+    #goBack { background: #f44336; color: white; }
+    #vault {
+      margin-top: 20px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h2 id="title"></h2>
+    <div id="authSection">
+      <div class="input-wrapper">
+        <input type="password" id="passwordInput" placeholder="Enter Password">
+        <button class="toggle-btn" id="toggleVisibility">👁️</button>
+      </div>
+      <button id="submitButton">Submit</button>
+      <button id="resetAll">Reset Password & Vault Code</button>
+      <button id="setCodeLength">Set Vault Code Length</button>
+    </div>
+
+    <div id="vault" style="display: none;"></div>
+    <div id="vaultActions" style="display: none;">
+      <button id="goBack">Go Back</button>
+    </div>
+  </div>
+
+  <script>
+    const passwordInput = document.getElementById("passwordInput");
+    const toggleBtn = document.getElementById("toggleVisibility");
+    const submitButton = document.getElementById("submitButton");
+    const vault = document.getElementById("vault");
+    const title = document.getElementById("title");
+    const authSection = document.getElementById("authSection");
+    const vaultActions = document.getElementById("vaultActions");
+    const resetAllBtn = document.getElementById("resetAll");
+    const setCodeLengthBtn = document.getElementById("setCodeLength");
+    const goBackBtn = document.getElementById("goBack");
+
+    let savedPassword = localStorage.getItem("userPassword");
+
+    // Set default length if not already stored
+    if (!localStorage.getItem("codeLength")) {
+      localStorage.setItem("codeLength", "100");
+    }
+
+    let codeLength = parseInt(localStorage.getItem("codeLength"));
+
+    if (!savedPassword) {
+      title.innerText = "Set Your Password";
+    } else {
+      title.innerText = "Enter Your Password";
+    }
+
+    function generateRandomCode(length = 100) {
+      const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:',.<>?/";
+      let code = "";
+      for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * charset.length);
+        code += charset[randomIndex];
+      }
+      return code;
+    }
+
+    function unlockVault() {
+      const code = localStorage.getItem("secretCode");
+      vault.innerText = code;
+      vault.style.display = "block";
+      title.innerText = "Vault";
+      authSection.style.display = "none";
+      vaultActions.style.display = "block";
+    }
+
+    submitButton.onclick = () => {
+      const userInput = passwordInput.value;
+
+      if (!savedPassword) {
+        localStorage.setItem("userPassword", userInput);
+        const code = generateRandomCode(codeLength);
+        localStorage.setItem("secretCode", code);
+        unlockVault();
+      } else {
+        if (userInput === savedPassword) {
+          unlockVault();
+        } else {
+          alert("Wrong password, try again.");
+        }
+      }
+    };
+
+    toggleBtn.onclick = () => {
+      passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+    };
+
+    resetAllBtn.onclick = () => {
+      const newPass = prompt("Enter your new password:");
+      if (!newPass) return;
+      const newVault = generateRandomCode(codeLength);
+      localStorage.setItem("userPassword", newPass);
+      localStorage.setItem("secretCode", newVault);
+      alert("Password and vault code reset successfully. You can now log in.");
+      location.reload();
+    };
+
+    setCodeLengthBtn.onclick = () => {
+      const newLength = prompt("Enter desired code length (number):");
+      const parsed = parseInt(newLength);
+      if (!isNaN(parsed) && parsed > 0) {
+        localStorage.setItem("codeLength", parsed);
+        codeLength = parsed;
+        const newCode = generateRandomCode(codeLength);
+        localStorage.setItem("secretCode", newCode);
+        alert("Vault code length set to " + parsed + " and new code generated.");
+        if (vault.style.display === "block") {
+          vault.innerText = newCode;
+        }
+      } else {
+        alert("Invalid number.");
+      }
+    };
+
+    goBackBtn.onclick = () => {
+      location.reload();
+    };
+  </script>
+</body>
+</html>
